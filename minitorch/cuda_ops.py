@@ -294,15 +294,17 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
         cuda.syncthreads()
     else:
         cache[pos] = 0.0
-    if i < size:
-        for step in [1, 2, 4, 8, 16]:
-            if pos % (2 * step) == 0:
-                cache[pos] += cache[pos + step]
-                cuda.syncthreads()
-            step *= 2
-    # for each block, sum up to out
+
+    step = 1
+    while step < BLOCK_DIM:
+        if pos % (2 * step) == 0 and pos + step < BLOCK_DIM:
+            cache[pos] += cache[pos + step]
+        cuda.syncthreads()
+        step *= 2
+        
     if pos == 0:
         out[cuda.blockIdx.x] = cache[0]
+
 
 
 jit_sum_practice = cuda.jit()(_sum_practice)
@@ -423,22 +425,18 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     # TODO: Implement for Task 3.3.
     a_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
-
-    thread_row = cuda.threadIdx.x
-    thread_col = cuda.threadIdx.y
-
-    # Copy data into shared memory
-    if i >= size or j >= size:
-        return
-    a_shared[thread_row, thread_col] = a[thread_row * size + thread_col]
-    b_shared[thread_row, thread_col] = b[thread_row * size + thread_col]
-    cuda.syncthreads()
-
-    accumulator = 0
-    for idx in range(size):
-            accumulator += a_shared[thread_row, idx] * b_shared[idx, thread_col]
-    
-    out[thread_row * size + thread_col] = accumulator
+    i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+    j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
+    local_i = cuda.threadIdx.x
+    local_j = cuda.threadIdx.y
+    if i >= 0 and i < size and j >= 0 and j < size:
+        a_shared[local_i, local_j] = a[i * size + j]
+        b_shared[local_i, local_j] = b[i * size + j]
+        cuda.syncthreads()
+        acc = 0.0
+        for k in range(size):
+            acc += a_shared[local_i, k] * b_shared[k, local_j]
+        out[i * size + j] = acc
 
 
 jit_mm_practice = jit(_mm_practice)
