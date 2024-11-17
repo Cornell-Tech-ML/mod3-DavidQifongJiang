@@ -295,7 +295,7 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     else:
         cache[pos] = 0.0
     if i < size:
-        for step in [1, 2, 4, 8, 16, 32, 64]:
+        for step in [1, 2, 4, 8, 16]:
             if pos % (2 * step) == 0:
                 cache[pos] += cache[pos + step]
                 cuda.syncthreads()
@@ -428,18 +428,17 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     thread_col = cuda.threadIdx.y
 
     # Copy data into shared memory
-    if thread_row < size and thread_col < size:
-        a_shared[thread_row, thread_col] = a[thread_row * size + thread_col]
-        b_shared[thread_row, thread_col] = b[thread_row * size + thread_col]
-
+    if i >= size or j >= size:
+        return
+    a_shared[thread_row, thread_col] = a[thread_row * size + thread_col]
+    b_shared[thread_row, thread_col] = b[thread_row * size + thread_col]
     cuda.syncthreads()
 
-    # matrix multiplication
-    if thread_row < size and thread_col < size:
-        accumulator = 0.0
-        for idx in range(size):
+    accumulator = 0
+    for idx in range(size):
             accumulator += a_shared[thread_row, idx] * b_shared[idx, thread_col]
-        out[thread_row * size + thread_col] = accumulator
+    
+    out[thread_row * size + thread_col] = accumulator
 
 
 jit_mm_practice = jit(_mm_practice)
