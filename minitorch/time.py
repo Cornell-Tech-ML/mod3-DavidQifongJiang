@@ -1,15 +1,20 @@
-import random
-from collections import defaultdict
 import minitorch
 import time
-import sys
 import numpy as np
 
 FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
 GPUBackend = minitorch.TensorBackend(minitorch.CudaOps)
 
 
-def run_matmul(backend, size=16) -> None:
+def run_matmul(backend: minitorch.TensorBackend, size: int) -> None:
+    """Run matrix multiplication test with a given backend and size.
+
+    Args:
+    ----
+        backend: The tensor backend to use for computation.
+        size: The size of the matrices to multiply.
+
+    """
     batch_size = 2
 
     x = minitorch.rand((batch_size, size, size), backend=backend)
@@ -19,8 +24,8 @@ def run_matmul(backend, size=16) -> None:
 
 if __name__ == "__main__":
     # Warmup
-    run_matmul(FastTensorBackend)
-    run_matmul(GPUBackend)
+    run_matmul(FastTensorBackend, size=16)  # Ensure "size" is passed
+    run_matmul(GPUBackend, size=16)  # Ensure "size" is passed
 
     ntrials = 3
     times = {}
