@@ -1,3 +1,14 @@
+"""Minitorch: A lightweight deep learning framework.
+
+This package contains modules and functionalities for building and training
+machine learning models, including support for CUDA operations, tensors, and
+autograd.
+
+Modules:
+- cuda_ops: GPU
+- fast_ops: CPU
+"""
+
 from .testing import MathTest, MathTestVariable  # type: ignore # noqa: F401,F403
 from .fast_ops import *  # noqa: F401,F403
 from .cuda_ops import *  # noqa: F401,F403
