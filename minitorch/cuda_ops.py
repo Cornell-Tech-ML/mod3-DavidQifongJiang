@@ -537,7 +537,10 @@ def _tensor_matrix_multiply(
             a_shared[pi, pj] = a_storage[
                 batch * a_batch_stride + i * a_strides[1] + a_idx * a_strides[2]
             ]
+        # Compute row index for `b` in the current segment.
         b_idx = offset + pi
+
+        # Check bounds for valid indices in `b`.
         if b_idx < K_dim and j < Columns:
             b_shared[pi, pj] = b_storage[
                 batch * b_batch_stride + b_idx * b_strides[1] + j * b_strides[2]
